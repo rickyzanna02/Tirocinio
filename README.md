@@ -1,12 +1,11 @@
 # Progetto di Tirocinio
-![Topology](/images/topo2.png) 
 
 ## Indice
-- [Descrizione](Descrizione)
+- [Descrizione](#Descrizione)
 - [Struttura](#Struttura)
 - [Installazione](#Installazione)
 - [Demo](#Demo)
-- [Contacts](#Contacts)
+- [Contatti](#Contatti)
 
 ## Descrizione
 
@@ -39,17 +38,22 @@ Il progetto è composto da 3 file principali:
 
 Iniziamo con le configurazioni preliminari:
 1. Scaricare il progetto con i comandi git
-2. Installare Mosquitto (broker MQTT): ```sudo apt install mosquitto```
+2. Installare e avviare Mosquitto (broker MQTT): ```sudo apt install mosquitto```. Una volta installato dovrebbe avviarsi automaticamente, altrimenti avviarlo manualmente con: ```sudo systemctl start mosquitto```
 3. Entrare nell'ambiente virtuale: ```source venv/bin/activate```
 4. Scaricare tutte le dipendenze necessarie: ```pip install -r requirements.txt```
 
 
 Ora il sistema è pronto per essere utilizzato:
 5. aprire 2 terminali:
+
     - nel primo avviare app.py con ```python3 app.py```;
+
     - nel secondo avviare generator.py con ```python3 generator.py```
+
 6. Accedere alla dashboard via internet con ```http://localhost:5000```
+
 7. Interagire con l'applicazione (iscriversi e disiscriversi ai topic, mostrare e nascondere grafici)
+
 
 [Torna all'indice](#Indice)
 
