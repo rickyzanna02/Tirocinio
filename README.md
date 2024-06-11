@@ -46,12 +46,9 @@ Iniziamo con le configurazioni preliminari:
 Ora il sistema è pronto per essere utilizzato:
 5. aprire 2 terminali:
 
+   -nel primo avviare app.py con ```python3 app.py```;
 
-    - nel primo avviare app.py con ```python3 app.py```;
-
-
-    - nel secondo avviare generator.py con ```python3 generator.py```
-    
+   -nel secondo avviare generator.py con ```python3 generator.py```
 
 6. Accedere alla dashboard via internet con ```http://localhost:5000```
 
