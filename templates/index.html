@@ -1,0 +1,257 @@
+{% extends "bootstrap/base.html" %}
+{% block title %}MQTT Dashboard{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .custom-button {
+        margin-left: 10px; /* Aggiunge spazio a sinistra del bottone */
+        margin-right: 10px; /* Aggiunge spazio a destra del bottone */
+        background-color:rgba(128, 128, 128, 0.373);
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+
+<script type="text/javascript" charset="utf-8">
+$(document).ready(function() {
+    var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+    // Gestisci l'evento 'client_connected' emesso dal server
+    socket.on('client_connected', function(sid) {
+        $('#client_id').text(sid);
+    });
+
+    // Variabili per memorizzare i grafici per i topic 1, 2, 3 e 4
+    var mqttChartTopic1;
+    var mqttChartTopic2;
+    var mqttChartTopic3;
+    var mqttChartTopic4;
+
+    socket.on('mqtt_message', function(data) {
+        console.log(data);
+        var text = data.topic + "/" + data.payload;
+        var $textarea = $('#subscribe_messages');
+        $textarea.val($textarea.val() + text + '\n');
+        updateChart(data.topic, parseFloat(data.payload)); // Verifica il topic e aggiorna il grafico corrispondente con il nuovo valore
+    });
+
+    // Ricevi l'elenco dei topic disponibili dal server
+    socket.on('available_topics', function(topics) {
+        var topicList = $('#topic_list');
+        topicList.empty();  // Pulisce la lista dei topic
+
+        // Per ogni topic, crea una checkbox per sottoscriversi/disiscriversi, e 2 bottoni per mostrare/nascondere il grafico
+        topics.forEach(function(topic) {
+            var checkboxId = 'topic_checkbox_' + topic;
+            var checkboxLabel = $('<label>', { class: 'control-label col-xs-4', for: checkboxId }).text(topic);
+            var checkboxInput = $('<input>', { type: 'checkbox', id: checkboxId, value: topic, class: 'checkbox-custom' });
+            var showButton = $('<button>', { id: 'showButton'+topic, text: 'Mostra Grafico ',  disabled: 'disabled', class: 'custom-button'});
+            var hideButton = $('<button>', { id: 'hideButton'+topic, text: 'Nascondi Grafico ',  disabled: 'disabled', class: 'custom-button'});
+            var checkboxDiv = $('<div>', { class: 'col-xs-8' }).append(checkboxInput, showButton, hideButton);
+            var checkboxGroup = $('<div>', { class: 'form-group' }).append(checkboxLabel, checkboxDiv);
+            topicList.append(checkboxGroup);
+           
+            // Aggiunge un evento per sottoscriversi/disiscriversi quando la checkbox viene cambiata
+            checkboxInput.change(function() {
+                var topic = $(this).val();
+                var action = this.checked ? 'subscribe' : 'unsubscribe';
+                var data = {
+                    topic: topic,
+                };
+                socket.emit(action, JSON.stringify(data));
+                // Abilita il bottone "Mostra Grafico" se la checkbox è selezionata
+                if (this.checked) {
+                    $('#showButton'+topic).prop('disabled', false);
+                } else {
+                    $('#hideButton' + topic).click();
+                    $('#showButton'+topic).prop('disabled', true);
+                }
+             
+            });
+        });
+    });
+
+    // Ottieni l'orario corrente
+    function orarioCorrente() {
+        var oraCorrente = new Date();
+        var ore = oraCorrente.getHours();
+        var minuti = oraCorrente.getMinutes();
+        var secondi = oraCorrente.getSeconds();
+        // Formattazione dell'orario aggiungendo lo zero iniziale se necessario
+        ore = (ore < 10 ? '0' : '') + ore;
+        minuti = (minuti < 10 ? '0' : '') + minuti;
+        secondi = (secondi < 10 ? '0' : '') + secondi;
+        // Costruzione della stringa dell'orario
+        var orario = ore + '\:' + minuti + '\:' + secondi;
+        return orario;
+    }
+
+    // Funzione per creare o aggiornare il grafico con i nuovi dati
+    function updateChart(topic, value) {
+       // Ottieni il riferimento al canvas del grafico corrispondente al topic e unita di misura
+        var ctx;
+        var chart;
+        var um;
+
+        if (topic === "ping") {
+            ctx = document.getElementById('mqtt_chart_topic1').getContext('2d');
+            chart = mqttChartTopic1;
+            um="ms";
+        } else if (topic === "bandwidth") {
+            ctx = document.getElementById('mqtt_chart_topic2').getContext('2d');
+            chart = mqttChartTopic2;
+            um="Mbps";
+        } else if (topic === "iperf") {
+            ctx = document.getElementById('mqtt_chart_topic3').getContext('2d');
+            chart = mqttChartTopic3;
+            um="Mbps";
+        } else if (topic === "http_response_time") {
+            ctx = document.getElementById('mqtt_chart_topic4').getContext('2d');
+            chart = mqttChartTopic4;
+            um="ms";
+        }
+
+        // Se il grafico non esiste, crealo
+        if (!chart) {
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],  // Etichette temporali iniziali vuote
+                    datasets: [{
+                        label: topic,
+                        data: [],  // Dati iniziali vuoti
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'category',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Orario'
+                            }                            
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Valore [' + um+']'
+                            }                           
+                        }
+                    }
+                }
+            });
+            ctx.canvas.style.display = 'none';
+
+            // Assegna il grafico creato alla variabile corrispondente al topic
+            if (topic === "ping") {
+                mqttChartTopic1 = chart;
+            } else if (topic === "bandwidth") {
+                mqttChartTopic2 = chart;
+            } else if (topic === "iperf") {
+                mqttChartTopic3 = chart;
+            } else if (topic === "http_response_time") {
+                mqttChartTopic4 = chart;
+            }
+        }
+
+        // Aggiungi il nuovo valore al grafico
+        chart.data.labels.push(orarioCorrente());
+        chart.data.datasets[0].data.push(value);
+
+        // Mantieni solo gli ultimi 10 valori
+        if (chart.data.labels.length > 10) {
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
+        }
+
+        // Aggiorna il grafico
+        chart.update();
+        
+        function setupButtonBehavior(showButtonId, hideButtonId, topicId) {
+            document.getElementById(hideButtonId).addEventListener('click', function() {
+                document.getElementById(topicId).style.display = 'none';
+                this.disabled = true; // Disattiva il bottone 'hideButton'
+                document.getElementById(showButtonId).disabled = false; // Attiva il bottone 'showButton'
+            });
+
+            document.getElementById(showButtonId).addEventListener('click', function() {
+                document.getElementById(topicId).style.display = 'block';
+                this.disabled = true; // Disattiva il bottone 'showButton'
+                document.getElementById(hideButtonId).disabled = false; // Attiva il bottone 'hideButton'
+            });
+        }
+
+        setupButtonBehavior('showButtonping', 'hideButtonping', 'mqtt_chart_topic1');
+        setupButtonBehavior('showButtonbandwidth', 'hideButtonbandwidth', 'mqtt_chart_topic2');
+        setupButtonBehavior('showButtoniperf', 'hideButtoniperf', 'mqtt_chart_topic3');
+        setupButtonBehavior('showButtonhttp_response_time', 'hideButtonhttp_response_time', 'mqtt_chart_topic4');
+
+    }
+  
+});
+
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-12">
+            <h1>MQTT Dashboard</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Subscribe MQTT Messages</h3>
+                </div>
+                <div class="panel-body">
+                    <div class="col-xs-12">
+                        <div class="row">
+                            <div class="form-horizontal">
+                                <div class="form-group">
+                                    <label class="control-label col-xs-4">Topics:</label>
+                                    <div class="col-xs-8" id="topic_list">
+                                        <!-- I topic disponibili verranno inseriti qui dinamicamente -->
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="control-label col-xs-4">Messages:</label>
+                                    <div class="col-xs-8">
+                                        <textarea id="subscribe_messages" class="form-control" rows="10" readonly></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+      
+      <!-- Aggiunti i canvas per i grafici dei topic 1, 2, 3 e 4 -->
+      <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12">
+                <h2>Real-time MQTT Data Visualization</h2>
+                <canvas id="mqtt_chart_topic1"></canvas> <!-- Canvas per il grafico del topic 1 -->
+                <canvas id="mqtt_chart_topic2"></canvas> <!-- Canvas per il grafico del topic 2 -->
+                <canvas id="mqtt_chart_topic3"></canvas> <!-- Canvas per il grafico del topic 3 -->
+                <canvas id="mqtt_chart_topic4"></canvas> <!-- Canvas per il grafico del topic 4 --> 
+            </div>
+        </div>
+      </div>
+</div>
+{% endblock %}
