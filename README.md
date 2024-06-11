@@ -58,7 +58,7 @@ Ora il sistema è pronto per essere utilizzato:
 [Torna all'indice](#Indice)
 
 ## Demo
-Video dimostrativo di come funziona l'applicazione: [**Demo Link**](link) 
+Video dimostrativo di come funziona l'applicazione: [**Demo Link**](https://drive.google.com/file/d/1SqHk8vh59EZip0AyMr3dwAgmGSyi9bqv/view?usp=sharing) 
 
 [Torna all'indice](#Indice)
 
