@@ -18,7 +18,7 @@ Descrizione: l'applicazione sviluppata fa uso del protocollo MQTT per lo scambio
 - Dei grafici, uno per ogni topic, mostrano l'andamento dati
 - I subscriber possono iscriversi e disiscriversi ai topic in ogni momento, nonchè scegliere se visualizzare i grafici o meno tramite del pulsanti. 
 
-L'applicazione funziona correttamente con qualsiasi numero di publiher e di subscriber
+L'applicazione funziona correttamente con qualsiasi numero di publisher e di subscriber
 
 
 [Torna all'indice](#Indice)
@@ -29,7 +29,7 @@ L'applicazione funziona correttamente con qualsiasi numero di publiher e di subs
 Il progetto è composto da 3 file principali:
 - generator.py: responsabile della pubblicazione dei dati sui topic, svolge il ruolo del publisher;
 - index.html: è l'interfaccia utente dell'applicazione, contiene la dashboard e permette l'interazione con l'utente, svolge il ruolo di subscriber;
-- app.py che rappresenta il nucleo del sistema sviluppato, gestendo le comunicazioni e lo scambio dei messaggi tra le diverse entità.
+- app.py: che rappresenta il nucleo del sistema sviluppato, gestendo le comunicazioni e lo scambio dei messaggi tra le diverse entità.
 
 [Torna all'indice](#Indice)
 
